@@ -1,13 +1,19 @@
 from openai import OpenAI
 import os
 import sys
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ============ 常量管理 ============
-NVIDIA_API_KEY = ""
-NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
+NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
 
 # ============ 公共客户端 ============
-client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY)
+def get_client():
+    if not NVIDIA_API_KEY or NVIDIA_API_KEY.startswith("替换成"):
+        raise RuntimeError("请先在 .env 文件中配置 NVIDIA_API_KEY")
+    return OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY)
 
 # ============ GLM 思考输出颜色控制 ============
 _USE_COLOR = sys.stdout.isatty() and os.getenv("NO_COLOR") is None
@@ -17,6 +23,7 @@ _RESET_COLOR = "\033[0m" if _USE_COLOR else ""
 
 def chat_ds(message):
     """DeepSeek V4 Flash"""
+    client = get_client()
     completion = client.chat.completions.create(
         model="deepseek-ai/deepseek-v4-flash",
         messages=[{"role": "user", "content": message}],
@@ -38,6 +45,7 @@ def chat_ds(message):
 
 def chat_glm(message):
     """GLM 4.7"""
+    client = get_client()
     completion = client.chat.completions.create(
         model="z-ai/glm4.7",
         messages=[{"role": "user", "content": message}],
@@ -62,6 +70,7 @@ def chat_glm(message):
 
 def chat_kimi(message):
     """Kimi K2.5"""
+    client = get_client()
     completion = client.chat.completions.create(
         model="moonshotai/kimi-k2.5",
         messages=[{"role": "user", "content": message}],
@@ -80,6 +89,7 @@ def chat_kimi(message):
 
 def chat_minimax(message):
     """MiniMax M2.7"""
+    client = get_client()
     completion = client.chat.completions.create(
         model="minimaxai/minimax-m2.7",
         messages=[{"role": "user", "content": message}],
@@ -97,6 +107,7 @@ def chat_minimax(message):
 
 def chat_qwen(message):
     """Qwen3 Coder 480B"""
+    client = get_client()
     completion = client.chat.completions.create(
         model="qwen/qwen3-coder-480b-a35b-instruct",
         messages=[{"role": "user", "content": message}],
@@ -111,8 +122,5 @@ def chat_qwen(message):
 
 
 if __name__ == '__main__':
-    # chat_ds("现在使用的是什么模型?")
-    # chat_glm("现在用的什么模型")
-    # chat_kimi("现在用的哪个模型")
-    # chat_minimax("现在用的是什么模型")
-    chat_qwen("支持命令行调用吗？ 看下现在的文件路径？")
+    question = " ".join(sys.argv[1:]) or "测试下连接"
+    chat_qwen(question)
